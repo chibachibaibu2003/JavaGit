@@ -1,18 +1,18 @@
 package dao;
 
-import java.net.URI;
+	import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
-import dto.user;
-import util.GenerateHashedPw;
-import util.GenerateSalt;
+import dto.tosyodto ;
 
-public class AccountDAO {
+public class tosyodao{
 	private static Connection getConnection() throws URISyntaxException, SQLException {
 		try {
 			Class.forName("org.postgresql.Driver");
@@ -28,24 +28,18 @@ public class AccountDAO {
 	    return DriverManager.getConnection(dbUrl, username, password);
 	}
 	
-	public static int registerAccount(user user) {
-		String sql = "INSERT INTO account VALUES(default,?,?,?,?)";
+	
+public static int deleteTosyo(int id) {
+		
+		String sql = "DELETE FROM tosyotouroku WHERE id = ?";
 		int result = 0;
 		
-		// ランダムなソルトの取得(今回は32桁で実装)
-		String salt = GenerateSalt.getSalt(32);
-		
-		// 取得したソルトを使って平文PWをハッシュ
-		String hashedPw = GenerateHashedPw.getSafetyPassword(user.getPass(), salt);
-		
 		try (
-				Connection con = getConnection();
-				PreparedStatement pstmt = con.prepareStatement(sql);
+				Connection con =getConnection();	// DB接続
+				PreparedStatement pstmt = con.prepareStatement(sql);			// 構文解析
 				){
-			pstmt.setString(1, user.getName());
-			pstmt.setString(2, user.getMail());
-			pstmt.setString(3, salt);
-			pstmt.setString(4, hashedPw);
+			
+			pstmt.setInt(1, id);
 
 			result = pstmt.executeUpdate();
 		} catch (SQLException e) {
@@ -53,60 +47,85 @@ public class AccountDAO {
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		} finally {
-			System.out.println(result + "件更新しました。");
+			System.out.println(result + "件削除しました。");
 		}
 		return result;
 	}
-	
-	public static String getSalt(String mail) {
-		String sql = "SELECT salt FROM account WHERE mail = ?";
-		
-		try (
-				Connection con = getConnection();
-				PreparedStatement pstmt = con.prepareStatement(sql);
-				){
-			pstmt.setString(1, mail);
 
-			try (ResultSet rs = pstmt.executeQuery()){
-				
-				if(rs.next()) {
-					String salt = rs.getString("salt");
-					return salt;
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public static user login(String mail, String hashedPw) {
-		String sql = "SELECT * FROM account WHERE mail = ? AND password = ?";
-		
-		try (
-				Connection con = getConnection();
-				PreparedStatement pstmt = con.prepareStatement(sql);
-				){
-			pstmt.setString(1, mail);
-			pstmt.setString(2, hashedPw);
 
-			try (ResultSet rs = pstmt.executeQuery()){
-				
-				if(rs.next()) {
-					int id = rs.getInt("id");
-					String name = rs.getString("name");
-					String salt = rs.getString("salt");
-					
-					return new user(id,name,mail,salt,hashedPw);
+public static List<tosyodto> selectAlltosyo(){
+String sql = "SELECT * FROM tosyotouroku";
+			// 返却用変数
+			List<tosyodto> result = new ArrayList<>();
+
+			
+
+			
+			try (
+					Connection con = getConnection();
+					PreparedStatement pstmt = con.prepareStatement(sql);
+					){
+				try (ResultSet rs = pstmt.executeQuery()){
+					while(rs.next()) {
+						int id = rs.getInt("id");
+						String bname = rs.getString("bname");
+						String sname = rs.getString("sname");
+						String kname = rs.getString("kname");
+						int isname = rs.getInt("isname");
+
+						tosyodto employee = new tosyodto(id, bname, sname, kname, isname);
+						
+						result.add(employee);
+					}
 				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}catch (URISyntaxException e) {
+				e.printStackTrace();
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
+			
+
+			// Listを返却する。0件の場合は空のListが返却される。
+			return result;
+}
+
+
+	
+
+			
+			
+	
+
+
+
+
+		// 引数の Student インスタンスを元にデータを1件INSERTするメソッド
+		public static int registertosyokadaisample(tosyodto tosyokadaisample) {
+			
+			String sql = "INSERT INTO tosyokadaisample VALUES(?, ?, ?, ?, ?)";
+
+			// return用の変数
+			int result = 0;
+			
+			try (
+					Connection con = getConnection();	// DB接続
+					PreparedStatement pstmt = con.prepareStatement(sql);			// 構文解析
+					){
+				pstmt.setInt(1, tosyokadaisample.getId());
+				pstmt.setString(2, tosyokadaisample.getBname());
+				pstmt.setString(3, tosyokadaisample.getSname());
+				pstmt.setString(4, tosyokadaisample.getKname());
+				pstmt.setInt(5, tosyokadaisample.getIsname());
+
+				result = pstmt.executeUpdate();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}catch (URISyntaxException e) {
+				e.printStackTrace();
+			} finally {
+				System.out.println(result + "件更新しました。");
+			}
+			return result;
 		}
-		return null;
-	}
+
 }
